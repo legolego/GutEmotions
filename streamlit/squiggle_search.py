@@ -42,6 +42,7 @@ def click_button():
 def search():
 
     st.markdown("Draw a squiggle to represent the arc of emotions you want the plot of your next book to follow.")
+    st.markdown(":smiley: emotions are up, :cry: emotions are down.")
 
     canvas_result = st_canvas(
         fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
@@ -99,11 +100,11 @@ def search():
         #)
         #st.markdown(dl_link, unsafe_allow_html=True)
 
-        if st.button('Submit', on_click=click_button):
+        if st.button('Search', on_click=click_button):
             arr_to_plot = gf.get_gemini_img_approx(file_path)
-            plt = get_plot_from_squiggle(arr_to_plot, title = "Gemini Representation of Squiggle")
+            plt = get_plot_from_squiggle(arr_to_plot)
             
-            
+            st.markdown("Gemini Representation of Squiggle:")
             st.pyplot(plt)
 
             #print(arr_to_plot)
@@ -185,9 +186,9 @@ def get_plot_from_squiggle(arr_to_plot, title="Drawn Line"):
     
     #plt.xlabel("X axis")
     #plt.ylabel("Y axis")
-    plt.figure(figsize=(2.5,.2))
+    plt.figure(figsize=(2,.2))
     plt.axis('off')
-    plt.title(title, fontsize = 3)
+    #plt.title(title, fontsize = 3)
     plt.plot(y, color ="red")
     
     
