@@ -169,7 +169,7 @@ def search():
             html_table = f"<table><tr><th>Title</th><th>Distance</th><th>Plot</th></tr>{''.join(table_rows)}</table>"
 
             # Display the HTML table
-            st.markdown("Nearest Books")
+            st.markdown("Nearest Books by Dynamic Time Warping Distance:")
             st.markdown(html_table, unsafe_allow_html=True)
 
 
