@@ -29,4 +29,19 @@ def get_gemini_img_approx(img_path):
     arr = np.array(ast.literal_eval(response.text[
         response.text.index('['):response.text.rindex(']')+1]))
     print('returned!')
-    return arr
+    return scale_numbers(arr[:,1])
+
+def scale_numbers(numbers):
+    """
+    Scales a list of numbers to be between -1 and 1.
+
+    Args:
+        numbers: A list of numbers.
+
+    Returns:
+        A new list of numbers scaled between -1 and 1.
+    """
+    min_val = min(numbers)
+    max_val = max(numbers)
+    scaled_numbers = [(2 * (num - min_val) / (max_val - min_val)) - 1 for num in numbers]
+    return scaled_numbers

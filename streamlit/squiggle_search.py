@@ -10,6 +10,11 @@ from pathlib import Path
 from streamlit_drawable_canvas import st_canvas
 import Gemini_funcs as gf
 import matplotlib.pyplot as plt
+import io
+
+import numpy as np
+from dtaidistance import dtw
+
 
 def main():
 
@@ -51,9 +56,9 @@ def search():
         )
 
     # Do something interesting with the image data and paths
-    if canvas_result.image_data is not None:
-        print("show image")
-        st.image(canvas_result.image_data)
+    #if canvas_result.image_data is not None:
+    #   print("show image")
+    #    st.image(canvas_result.image_data)
 
 
     try:
@@ -96,20 +101,97 @@ def search():
 
         if st.button('Submit', on_click=click_button):
             arr_to_plot = gf.get_gemini_img_approx(file_path)
-            plt = get_plot_from_squiggle(arr_to_plot)
+            plt = get_plot_from_squiggle(arr_to_plot, title = "Gemini Representation of Squiggle")
+            
+            
             st.pyplot(plt)
 
-def get_plot_from_squiggle(arr_to_plot):
+            #print(arr_to_plot)
+
+
+            # Make a random list of book to query against
+            random_list = np.random.uniform(-1, 1, size=(10, 20)).tolist()
+            rand_titles = ["Random Arc 1", "Random Arc 2", "Random Arc 3", "Random Arc 4", "Random Arc 5", "Random Arc 6", "Random Arc 7", "Random Arc 8", "Random Arc 9", "Random Arc 10"]
+            titles = pd.Series(rand_titles)
+            scores= pd.Series(random_list)
+            dfBooks = pd.concat([titles, scores], axis=1)
+            dfBooks.columns = ['Title', 'Scores']
+
+            #st.dataframe(dfBooks)
+
+            #######################
+
+            target = np.array(arr_to_plot)
+            all_dists = []
+            for index, row in dfBooks.iterrows():
+                bookArc = np.array(row['Scores'])
+                distance = dtw.distance_fast(target, bookArc)
+                all_dists.append((row['Title'], distance, bookArc))
+
+            sorted_by_second = sorted(all_dists, key=lambda tup: tup[1], reverse=False)
+            #sorted_by_second
+
+            # Create an empty list to store the HTML table rows
+            table_rows = []
+
+            # Iterate over each tuple in sorted_by_second
+            for item in sorted_by_second:
+                title = item[0]
+                distance = item[1]
+                array = item[2]
+
+                # Create a matplotlib plot of the array
+                fig, ax = plt.subplots(figsize=(2, .3))
+                ax.plot(array)
+                ax.set_title(title + " - " + str(round(distance, 2)))
+                ax.get_xaxis().set_visible(False)
+                ax.get_yaxis().set_visible(False)
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['bottom'].set_visible(False)
+                ax.spines['left'].set_visible(False)
+
+
+                # Convert the plot to an image
+                buf = io.BytesIO()
+                #plt.figure(figsize=(1,1))
+                plt.savefig(buf, format='png')
+                buf.seek(0)
+                plot_img = base64.b64encode(buf.getvalue()).decode('utf-8')
+
+                # Create the HTML table row
+                table_row = f"<tr><td>{title}</td><td>{distance}</td><td><img src='data:image/png;base64,{plot_img}'></td></tr>"
+
+                # Append the row to the list of table rows
+                table_rows.append(table_row)
+
+            # Create the HTML table
+            html_table = f"<table><tr><th>Title</th><th>Distance</th><th>Plot</th></tr>{''.join(table_rows)}</table>"
+
+            # Display the HTML table
+            st.markdown("Nearest Books")
+            st.markdown(html_table, unsafe_allow_html=True)
+
+
+
+def get_plot_from_squiggle(arr_to_plot, title="Drawn Line"):
+    plt.clf()
     # data to be plotted
-    x = arr_to_plot[:,0]
-    y = arr_to_plot[:,1]
+
+    #x = arr_to_plot[:,0]
+    y = arr_to_plot#[:,1]
 
     # plotting
-    plt.title("Drawn Line")
-    plt.xlabel("X axis")
-    plt.ylabel("Y axis")
-    plt.plot(x, y, color ="red")
-    plt.ylim(-1, 1)
+    
+    #plt.xlabel("X axis")
+    #plt.ylabel("Y axis")
+    plt.figure(figsize=(2.5,.2))
+    plt.axis('off')
+    plt.title(title, fontsize = 3)
+    plt.plot(y, color ="red")
+    
+    
+    #plt.ylim(-1, 1)
     return plt
 
 def about():
