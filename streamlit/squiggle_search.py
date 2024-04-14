@@ -11,6 +11,7 @@ from streamlit_drawable_canvas import st_canvas
 import Gemini_funcs as gf
 import matplotlib.pyplot as plt
 import io
+import ast
 
 import numpy as np
 from dtaidistance import dtw
@@ -117,6 +118,8 @@ def search():
             scores= pd.Series(random_list)
             dfBooks = pd.concat([titles, scores], axis=1)
             dfBooks.columns = ['Title', 'Scores']
+            
+            dfBooks = pd.read_csv("streamlit/data/books_final2.csv").iloc[:, 1:]
 
             #st.dataframe(dfBooks)
 
@@ -125,7 +128,8 @@ def search():
             target = np.array(arr_to_plot)
             all_dists = []
             for index, row in dfBooks.iterrows():
-                bookArc = np.array(row['Scores'])
+                bookArc = np.array(ast.literal_eval(row['Scores']), dtype=float)
+                print("Arc:", bookArc)
                 distance = dtw.distance_fast(target, bookArc)
                 all_dists.append((row['Title'], distance, bookArc))
 
