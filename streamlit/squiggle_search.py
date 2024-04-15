@@ -118,8 +118,9 @@ def search():
             scores= pd.Series(random_list)
             dfBooks = pd.concat([titles, scores], axis=1)
             dfBooks.columns = ['Title', 'Scores']
-            
+
             dfBooks = pd.read_csv("streamlit/data/books_final2.csv").iloc[:, 1:]
+            dfBooks = pd.read_parquet("streamlit/data/gutenberg_books.parquet").iloc[:, 1:]
 
             #st.dataframe(dfBooks)
 
@@ -127,11 +128,11 @@ def search():
 
             target = np.array(arr_to_plot)
             all_dists = []
-            for index, row in dfBooks.iterrows():
-                bookArc = np.array(ast.literal_eval(row['Scores']), dtype=float)
+            for index, row in dfBooks[dfBooks['emotion_scores'].str.len() > 0].iterrows():
+                bookArc = np.array(ast.literal_eval(row['emotion_scores']), dtype=float)
                 print("Arc:", bookArc)
                 distance = dtw.distance_fast(target, bookArc)
-                all_dists.append((row['Title'], distance, bookArc))
+                all_dists.append((row['title'], distance, bookArc))
 
             sorted_by_second = sorted(all_dists, key=lambda tup: tup[1], reverse=False)
             #sorted_by_second
