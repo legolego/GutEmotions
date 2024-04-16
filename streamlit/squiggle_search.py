@@ -99,16 +99,7 @@ def search():
         buffered = BytesIO()
         im.save(buffered, format="PNG")
         img_data = buffered.getvalue()
-        # try:
-        #     # some strings <-> bytes conversions necessary here
-        #     b64 = base64.b64encode(img_data.encode()).decode()
-        # except AttributeError:
-        #     b64 = base64.b64encode(img_data).decode()
 
-        # dl_link = (
-        #    f'<a download="{file_path}" id="button_id" href="data:file/txt;base64,{b64}">Export PNG</a><br></br>'
-        # )
-        # st.markdown(dl_link, unsafe_allow_html=True)
 
         if st.button('Search', on_click=click_button):
             arr_to_plot = gf.get_gemini_img_approx(file_path)
@@ -119,20 +110,9 @@ def search():
 
             # print(arr_to_plot)
 
-            # Make a random list of book to query against
-            random_list = np.random.uniform(-1, 1, size=(10, 20)).tolist()
-            rand_titles = ["Random Arc 1", "Random Arc 2", "Random Arc 3", "Random Arc 4", "Random Arc 5", "Random Arc 6", "Random Arc 7", "Random Arc 8", "Random Arc 9", "Random Arc 10"]
-            titles = pd.Series(rand_titles)
-            scores = pd.Series(random_list)
-            dfBooks = pd.concat([titles, scores], axis=1)
-            dfBooks.columns = ['Title', 'Scores']
-
-            dfBooks = pd.read_csv("streamlit/data/books_final2.csv").iloc[:, 1:]
+            # Load the books
             dfBooks = pd.read_parquet("streamlit/data/gutenberg_books.parquet").iloc[:, 1:]
 
-            # st.dataframe(dfBooks)
-
-            #######################
 
             target = np.array(arr_to_plot)
             all_dists = []
@@ -141,20 +121,20 @@ def search():
                                    dtype=float)
                 print("Arc:", bookArc)
                 distance = dtw.distance_fast(target, bookArc)
-                all_dists.append((row['title'], distance, bookArc))
+                all_dists.append((row['title'], distance, bookArc, row['txt_link']))
 
             sorted_by_second = sorted(all_dists, key=lambda tup: tup[1],
                                       reverse=False)
-            # sorted_by_second
 
             # Create an empty list to store the HTML table rows
             table_rows = []
 
             # Iterate over each tuple in sorted_by_second
-            for item in sorted_by_second:
+            for item in sorted_by_second[:20]:
                 title = item[0]
                 distance = item[1]
                 array = item[2]
+                link = item[3]
 
                 # Create a matplotlib plot of the array
                 fig, ax = plt.subplots(figsize=(2, .3))
@@ -176,7 +156,7 @@ def search():
                 plot_img = base64.b64encode(buf.getvalue()).decode('utf-8')
 
                 # Create the HTML table row
-                table_row = f"<tr><td>{title}</td><td>{distance}</td><td><img src='data:image/png;base64,{plot_img}'></td></tr>"
+                table_row = f"<tr><td><a href={link}>{title}</a></td><td>{distance}</td><td><img src='data:image/png;base64,{plot_img}'></td></tr>"
 
                 # Append the row to the list of table rows
                 table_rows.append(table_row)
@@ -185,7 +165,7 @@ def search():
             html_table = f"<table><tr><th>Title</th><th>Distance</th><th>Plot</th></tr>{''.join(table_rows)}</table>"
 
             # Display the HTML table
-            st.markdown("Nearest Books by Dynamic Time Warping Distance:")
+            st.markdown("Nearest 20 Books by Dynamic Time Warping Distance:")
             st.markdown(html_table, unsafe_allow_html=True)
 
 
