@@ -52,8 +52,10 @@ def click_button():
 
 def search():
 
-    st.markdown("Draw a squiggle to represent the arc of emotions you want the plot of your next book to follow.")
-    st.markdown(":smiley: emotions are up, :cry: emotions are down.")
+    st.markdown(":pencil2: a squiggle to represent the arc of emotions of the plot of the :book: you would like to read next.")
+    st.markdown(":smiley: emotions are at the top (y=+1)")
+    st.markdown(":expressionless: emotions are in the middle (y=0)")
+    st.markdown(":cry: emotions are at the bottom (y=-1)")
 
     canvas_result = st_canvas(
         fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
@@ -90,6 +92,9 @@ def search():
 
     if canvas_result is not None and canvas_result.image_data is not None:
         img_data = canvas_result.image_data
+
+        # st.image(img_data)
+
         im = Image.fromarray(img_data.astype("uint8"), mode="RGBA")
 
         file_path = f"tmp/{uuid.uuid4().hex}.png"
@@ -102,10 +107,17 @@ def search():
 
 
         if st.button('Search', on_click=click_button):
-            arr_to_plot = gf.get_gemini_img_approx(file_path)
-            plt = get_plot_from_squiggle(arr_to_plot)
+            st.markdown("Sending prompt and png to Gemini 1.5....")
+            st.markdown("Prompt:" + "`" + gf.prompt + "`")
+            arr_gemini = gf.get_gemini_img_approx(file_path)
+            arr_PIL = gf.get_line_from_image_PIL(file_path)
 
             st.markdown("Gemini Representation of Squiggle:")
+            plt = get_plot_from_squiggle(arr_gemini, color="blue")
+            st.pyplot(plt)
+
+            st.markdown("[PIL](https://python-pillow.org) Representation of Squiggle:")
+            plt = get_plot_from_squiggle(arr_PIL)
             st.pyplot(plt)
 
             # print(arr_to_plot)
@@ -113,15 +125,14 @@ def search():
             # Load the books
             dfBooks = pd.read_parquet("streamlit/data/gutenberg_books.parquet").iloc[:, 1:]
 
-
-            target = np.array(arr_to_plot)
+            target = np.array(arr_PIL)
             all_dists = []
             for index, row in dfBooks[dfBooks['emotion_scores'].str.len() > 0].iterrows():
                 bookArc = np.array(ast.literal_eval(row['emotion_scores']),
                                    dtype=float)
-                print("Arc:", bookArc)
+                #print("Arc:", bookArc)
                 distance = dtw.distance_fast(target, bookArc)
-                all_dists.append((row['title'], distance, bookArc, row['txt_link']))
+                all_dists.append((row['title'], distance, bookArc, row['txt_link'], np.max(bookArc), np.min(bookArc) ))
 
             sorted_by_second = sorted(all_dists, key=lambda tup: tup[1],
                                       reverse=False)
@@ -135,10 +146,14 @@ def search():
                 distance = item[1]
                 array = item[2]
                 link = item[3]
+                max = item[4]
+                min = item[5]
 
                 # Create a matplotlib plot of the array
                 fig, ax = plt.subplots(figsize=(2, .3))
                 ax.plot(array)
+                #ax.plot([1,-1], color = "green")
+                ax.set_ylim(-1.2, 1.2)
                 ax.set_title(title + " - " + str(round(distance, 2)))
                 ax.get_xaxis().set_visible(False)
                 ax.get_yaxis().set_visible(False)
@@ -165,29 +180,26 @@ def search():
             html_table = f"<table><tr><th>Title</th><th>Distance</th><th>Plot</th></tr>{''.join(table_rows)}</table>"
 
             # Display the HTML table
-            st.markdown("Nearest 20 Books by Dynamic Time Warping Distance:")
+            st.markdown("Nearest 20 Books by [Dynamic Time Warping](https://en.wikipedia.org/wiki/Dynamic_time_warping) Distance vs PIL representation:")
             st.markdown(html_table, unsafe_allow_html=True)
+            plt.close()
 
 
-
-def get_plot_from_squiggle(arr_to_plot, title="Drawn Line"):
+def get_plot_from_squiggle(arr_to_plot, color="red", title="Drawn Line"):
     plt.clf()
     # data to be plotted
 
-    # x = arr_to_plot[:,0]
     y = arr_to_plot#[:,1]
 
     # plotting
 
-    # plt.xlabel("X axis")
-    # plt.ylabel("Y axis")
-    plt.figure(figsize=(2,.2))
+    fig = plt.figure(figsize=(8, .1))
     plt.axis('off')
-    # plt.title(title, fontsize = 3)
-    plt.plot(y, color ="red")
+    plt.tight_layout(pad=-8)
+    plt.ylim(-1.2, 1.2)
+    plt.plot(y, color = color, linewidth= 1.5)
+    #plt.plot([1,-1], color = "green", linewidth= 10)
 
-
-    # plt.ylim(-1, 1)
     return plt
 
 
@@ -200,9 +212,19 @@ def about():
 
 
 if __name__ == "__main__":
-    # st.set_page_config(
-    #    page_title="Squiggle Search!", page_icon=":pencil2:"
-    # )
-    st.title("Squiggle Search!")
-    st.sidebar.subheader("Navigation")
+    st.set_page_config(
+       page_title="Gut-emotions Squiggle Search!", page_icon=":pencil2:"
+    )
+    st.title("Search with a Squiggle!")
+
+    st.sidebar.markdown(
+    """<a href="mhacks.org">
+    <img src="data:image/png;base64,{}" width="100">
+    </a>""".format(
+        base64.b64encode(open("streamlit/assets/Frame_45.png", "rb").read()).decode()
+    ),
+    unsafe_allow_html=True,
+    )
+    st.sidebar.subheader("Gut-Emotions powered by [Gemini 1.5](https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/)")
+    st.sidebar.markdown("Searching for emotional arcs from books in the Gutenberg Archive with only a line.")
     main()
