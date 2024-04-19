@@ -1,4 +1,4 @@
-<img src="./streamlit/assets/MHacks_header.png" alt="MHacks!" height="80"/></br>
+<img src="./streamlit/assets/MHacks_header.png" alt="MHacks!" height="180"/></br>
 # GutEmotions for Google x [MHacks!](https://safe-banon-80d.notion.site/Hacker-Guide-079b584c6deb446e88c53712dc0f9ecb)
 
 Submission for Spring 2024 hackathon with Travis.
