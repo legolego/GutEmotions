@@ -53,9 +53,9 @@ def click_button():
 def search():
 
     st.markdown(":pencil2: a squiggle to represent the arc of emotions of the plot of the :book: you would like to read next.")
-    st.markdown(":smiley: emotions are at the top (y=+1)")
-    st.markdown(":expressionless: emotions are in the middle (y=0)")
-    st.markdown(":cry: emotions are at the bottom (y=-1)")
+    st.markdown(":smiley: emotions are at the `top, y=+1`")
+    st.markdown(":expressionless: emotions are in the `middle, y=0`")
+    st.markdown(":cry: emotions are at the `bottom, y=-1`")
 
     canvas_result = st_canvas(
         fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
